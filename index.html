@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Crop Queen | XAVIONIX Fashion</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+:root {
+  --primary: #ff4d88;
+  --bg: #0f0f0f;
+  --text: #ffffff;
+  --card-bg: rgba(255,255,255,0.08);
+  --nav-bg: rgba(0,0,0,0.95);
+  --input-bg: rgba(255,255,255,0.05);
+}
+
+[data-theme="light"] {
+  --bg: #f4f4f4;
+  --text: #222;
+  --card-bg: #ffffff;
+  --nav-bg: rgba(255,255,255,0.95);
+  --input-bg: #fff;
+}
+
+* { margin:0; padding:0; box-sizing:border-box; font-family: 'Segoe UI', sans-serif; transition: 0.3s; }
+body { background: var(--bg); color: var(--text); overflow-x: hidden; }
+
+/* ENTRANCE LOCK */
+#authOverlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: #000; z-index: 5000; display: flex; align-items: center; justify-content: center;
+}
+.auth-box { background: #1a1a1a; padding: 40px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid var(--primary); text-align: center; }
+
+/* VIDEO BACKGROUND */
+.video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -2; overflow: hidden; }
+video { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.4); }
+
+/* NAVIGATION */
+nav {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 15px 5%; background: var(--nav-bg); backdrop-filter: blur(15px);
+  position: sticky; top: 0; z-index: 1000; border-bottom: 1px solid var(--primary);
+}
+.logo { color: var(--primary); font-size: 24px; font-weight: bold; letter-spacing: 2px; }
+nav ul { display: flex; list-style: none; gap: 15px; align-items: center; }
+nav ul li { cursor: pointer; font-size: 13px; text-transform: uppercase; font-weight: 600; }
+nav ul li:hover { color: var(--primary); }
+
+/* COLOR CHANGING TEXT */
+@keyframes colorShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.changing-text {
+  background: linear-gradient(-45deg, #ff4d88, #00d2ff, #9b59b6, #ff4d88);
+  background-size: 300% 300%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: colorShift 5s ease infinite;
+  display: inline-block;
+}
+
+/* CARDS & SOLD OUT LOGIC */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 25px; padding: 20px 0; }
+.card { background: var(--card-bg); border-radius: 15px; padding: 15px; text-align: center; border: 1px solid rgba(255,77,136,0.1); position: relative; overflow: hidden; }
+.card img { width: 100%; height: 280px; object-fit: cover; border-radius: 10px; margin-bottom: 15px; }
+.sold-overlay {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.7); display: flex; align-items: center;
+    justify-content: center; color: white; font-weight: 900; font-size: 24px;
+    transform: rotate(-15deg); z-index: 5; pointer-events: none;
+}
+
+.remove-btn { 
+    position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; 
+    border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; 
+    font-size: 11px; font-weight: bold; z-index: 20;
+}
+
+/* UTILS */
+.filter-bar { display: flex; gap: 12px; overflow-x: auto; padding: 15px 5%; scrollbar-width: none; }
+.filter-chip { padding: 8px 20px; border-radius: 25px; border: 1px solid var(--primary); cursor: pointer; font-size: 12px; font-weight: bold; white-space: nowrap;}
+.filter-chip.active { background: var(--primary); color: white; }
+.page { display: none; padding: 40px 5%; min-height: 85vh; animation: fadeIn 0.5s ease; }
+.active-page { display: block; }
+input, select { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #333; background: var(--input-bg); color: var(--text); }
+.btn { background: var(--primary); color: white; border: none; padding: 14px; border-radius: 8px; cursor: pointer; font-weight: bold; width: 100%; margin-top: 10px;}
+</style>
+</head>
+<body data-theme="dark">
+
+<div id="authOverlay">
+  <div class="auth-box">
+    <h1 style="color:var(--primary);">CROP QUEEN</h1>
+    <div id="authForms">
+        <input type="email" id="email" placeholder="Email">
+        <input type="password" id="pass" placeholder="Password">
+        <button class="btn" onclick="authAction('login')">Login</button>
+        <button class="btn" style="background:#444;" onclick="authAction('signup')">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<div class="video-container">
+  <video autoplay muted loop playsinline><source src="https://assets.mixkit.co/videos/preview/mixkit-girl-in-neon-clothing-in-a-dark-space-34534-large.mp4" type="video/mp4"></video>
+</div>
+
+<nav>
+  <div class="logo">CROP QUEEN</div>
+  <ul>
+    <li onclick="showPage('home')">Home</li>
+    <li onclick="showPage('shop')">Shop</li>
+    <li onclick="checkAdminAccess()">Admin</li>
+    <li class="mode-toggle" onclick="toggleTheme()">🌓</li>
+    <li onclick="logout()" style="color:var(--primary);">Logout</li>
+  </ul>
+</nav>
+
+<section id="home" class="page active-page">
+  <div style="text-align: center; margin-top: 10vh;">
+    <h1 class="changing-text" style="font-size: 75px; font-weight: 900; letter-spacing: -2px;">XAVIONIX</h1><br>
+    <p class="changing-text" style="font-size: 18px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase;">Premium Crop Tops | Kenya</p><br><br>
+    <button class="btn" style="width:auto; padding: 15px 40px;" onclick="showPage('shop')">SHOP NOW</button>
+  </div>
+</section>
+
+<section id="shop" class="page">
+  <div class="filter-bar">
+    <div class="filter-chip active" onclick="filterItems('All', this)">All</div>
+    <div class="filter-chip" onclick="filterItems('Streetwear', this)">Streetwear</div>
+    <div class="filter-chip" onclick="filterItems('Ribbed', this)">Ribbed</div>
+    <div class="filter-chip" onclick="filterItems('Oversized', this)">Oversized</div>
+    <div class="filter-chip" onclick="filterItems('Corset', this)">Corset</div>
+    <div class="filter-chip" onclick="filterItems('Basic', this)">Basic Tees</div>
+  </div>
+  <div class="grid" id="productDisplay"></div>
+</section>
+
+<section id="admin" class="page">
+  <div class="auth-box" style="margin:auto; background: var(--card-bg);">
+    <h2 style="color:var(--primary);">Admin: Bulk Upload</h2>
+    <input type="text" id="pName" placeholder="Base Product Name (e.g. Summer Crop)">
+    <input type="number" id="pPrice" placeholder="Price (Ksh)">
+    <select id="pCat">
+        <option value="Streetwear">Streetwear</option>
+        <option value="Ribbed">Ribbed</option>
+        <option value="Oversized">Oversized</option>
+        <option value="Corset">Corset</option>
+        <option value="Basic">Basic Tee</option>
+    </select>
+    <p style="font-size: 11px; margin-top:10px;">Select one or more images:</p>
+    <input type="file" id="pImage" accept="image/*" multiple>
+    <button class="btn" onclick="uploadItems()">Upload All Selected</button>
+  </div>
+</section>
+
+<script>
+let isAdmin = false;
+let currentFilter = 'All';
+let inventory = JSON.parse(localStorage.getItem('cq_inventory')) || [];
+let users = JSON.parse(localStorage.getItem('cq_users')) || [];
+
+function authAction(type) {
+    const e = document.getElementById('email').value;
+    const p = document.getElementById('pass').value;
+    if(!e || !p) return alert("Fill all fields");
+    if(type === 'signup') {
+        users.push({e, p});
+        localStorage.setItem('cq_users', JSON.stringify(users));
+        alert("Account Created! Now Login.");
+    } else {
+        const user = users.find(u => u.e === e && u.p === p);
+        if(user) document.getElementById('authOverlay').style.display = 'none';
+        else alert("Invalid credentials");
+    }
+}
+
+function checkAdminAccess() {
+    const pin = prompt("Enter Admin PIN:");
+    if(pin === "Meshack2004") {
+        isAdmin = true;
+        showPage('admin');
+        renderStore(currentFilter); 
+    } else alert("Denied");
+}
+
+function renderStore(filter = 'All') {
+  currentFilter = filter;
+  const display = document.getElementById('productDisplay');
+  const items = filter === 'All' ? inventory : inventory.filter(i => i.category === filter);
+  
+  display.innerHTML = items.map(i => `
+    <div class="card">
+      ${i.sold ? '<div class="sold-overlay">SOLD OUT</div>' : ''}
+      ${isAdmin ? `<button class="remove-btn" onclick="handleAdminAction(${i.id})">${i.sold ? 'DELETE' : 'MARK SOLD'}</button>` : ''}
+      <img src="${i.img}">
+      <h3>${i.name}</h3>
+      <p>Ksh ${i.price}</p>
+      ${i.sold ? 
+        '<button class="btn" style="background:#333; cursor:not-allowed;">Out of Stock</button>' : 
+        `<button class="btn" onclick="window.open('https://wa.me/254115043650?text=I want to order ${i.name}')">Order Now</button>`
+      }
+    </div>
+  `).join('');
+}
+
+function handleAdminAction(id) {
+    const item = inventory.find(i => i.id === id);
+    if(!item.sold) {
+        if(confirm("Mark as SOLD OUT?")) {
+            item.sold = true;
+            localStorage.setItem('cq_inventory', JSON.stringify(inventory));
+            renderStore(currentFilter);
+        }
+    } else {
+        if(confirm("Permanently delete this image from catalog?")) {
+            inventory = inventory.filter(i => i.id !== id);
+            localStorage.setItem('cq_inventory', JSON.stringify(inventory));
+            renderStore(currentFilter);
+        }
+    }
+}
+
+function uploadItems() {
+  const name = document.getElementById('pName').value;
+  const price = document.getElementById('pPrice').value;
+  const cat = document.getElementById('pCat').value;
+  const files = document.getElementById('pImage').files;
+
+  if(!name || files.length === 0 || !price) return alert("Fill all details and select images");
+
+  Array.from(files).forEach((file, index) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      inventory.push({ 
+        id: Date.now() + index, 
+        name: files.length > 1 ? `${name} #${index + 1}` : name, 
+        price, 
+        category: cat, 
+        img: e.target.result,
+        sold: false 
+      });
+      if(index === files.length - 1) {
+        localStorage.setItem('cq_inventory', JSON.stringify(inventory));
+        setTimeout(() => { renderStore('All'); showPage('shop'); }, 500);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function filterItems(cat, el) {
+    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    renderStore(cat);
+}
+
+function toggleTheme() {
+    document.body.dataset.theme = document.body.dataset.theme === "dark" ? "light" : "dark";
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+  document.getElementById(id).classList.add('active-page');
+}
+
+function logout() { location.reload(); }
+
+renderStore();
+</script>
+</body>
+</html>
